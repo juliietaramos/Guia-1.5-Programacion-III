@@ -34,20 +34,19 @@ public class Main {
                         System.out.println("Precio promedio de los productos de la categoria Hogar: " + reduccionDeDatos());
                 case 3 -> productoMasCaro().values().forEach(System.out::println);
                 case 4 -> System.out.println(usoDeOptionals().orElse("Producto inexistente"));
-                //case 5 -> obtenerPrimeros5Elementos();
-                // case 6 -> convertirPalabrasALongitud();
-                // case 7 -> concatenarNombres();
-                // case 8 -> eliminarDuplicados();
-                // case 9 -> obtenerTop3Numeros();
-                // case 10 -> agruparPalabrasPorLongitud();
+                case 5 ->
+                        System.out.println("Producto mas barato: " + productoMasBarato().orElseThrow(NoSuchElementException::new));
+                case 6 -> producosOrdenadosAlfabeticamente().forEach(System.out::println);
+                case 7 -> System.out.println("Stock total: " + calculoDeStockTotal());
+                case 8 -> System.out.println(stockPorCategoria());
+                case 9 -> System.out.println(aplicarDescuento());
+                case 10 -> System.out.println("Ganancia total: " + gananciaTotalInventario());
                 case 0 -> System.out.println("Saliendo del programa...");
                 default -> System.out.println("Opción no válida, intente de nuevo.");
             }
         }
         while (opcion != 0);
         scanner.close();
-
-
     }
 
     private static List<Producto> filtradoYTransformacion() {
@@ -78,5 +77,66 @@ public class Main {
                 .filter(p -> p.getCategoria()
                         .equals("Deportes") && p.getStock() > 10)
                 .map(p -> p.getNombre().toLowerCase()).findFirst();
+    }
+
+    private static Optional<Producto> productoMasBarato() {
+        /*Double precioBarato=listaProductos
+                .stream()
+                .mapToDouble(n -> n.getStock()*n.getPrecio())
+                .min().orElse(0);
+        return listaProductos
+                .stream()
+                .filter(Producto::getPrecio*Producto::getStock -> precioBarato);*/
+        return listaProductos
+                .stream()
+                .min(Comparator.comparingDouble(p -> p.getStock() * p.getPrecio()));
+    }
+
+    private static List<String> producosOrdenadosAlfabeticamente() {
+        return listaProductos
+                .stream()
+                .filter(p -> p.getStock() > 0 && p.getNombre().length() >= 5)
+                .map(p -> p.getNombre())
+                .sorted()
+                .toList();
+    }
+
+    private static Integer calculoDeStockTotal() {
+        Double precioPromedio = listaProductos
+                .stream()
+                .collect(Collectors
+                        .averagingDouble(p -> p.getPrecio()));
+        return listaProductos
+                .stream()
+                .filter(p->p.getPrecio()>precioPromedio)
+                .mapToInt(p -> p.getStock())
+                //.sum();
+                .reduce(0,(p1 , p2) -> p1 + p2);
+    }
+
+    private static Map<String , Integer> stockPorCategoria(){
+        Map<String,Long> conteoPorCategoria = listaProductos
+                .stream()
+                .collect(Collectors.groupingBy(Producto::getCategoria, Collectors.counting()));
+
+        return listaProductos
+                .stream()
+                .filter(producto -> conteoPorCategoria.get(producto.getCategoria()) > 3)
+                .collect(Collectors.groupingBy(Producto::getCategoria,Collectors.summingInt(Producto::getStock)));
+    }
+
+    private static List<Producto> aplicarDescuento(){
+        return listaProductos
+                .stream()
+                .filter(p -> p.getStock()>20)
+                .peek(p -> p.setPrecio(p.getPrecio()*0.85))
+                .toList();
+    }
+
+    private static Double gananciaTotalInventario(){
+        return listaProductos
+                .stream()
+                .mapToDouble(p -> p.getCategoria().equals("Electronica") ? p.getPrecio()*0.35 : p.getPrecio()*0.55)
+                .sum();
     }
 }
